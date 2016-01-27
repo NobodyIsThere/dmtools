@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+import cmd
+import json
+import roll
+
+class DMTools(cmd.Cmd):
+    prompt = "\ndmtools > "
+    def __init__(self):
+        cmd.Cmd.__init__(self)
+        self.active_entities = []
+
+    def do_describe(self, string):
+        entity = self.load(string)
+        if entity is not None:
+            print entity["description"]
+
+    def do_d(self, string):
+        self.do_describe(string)
+
+    def load(self, string):
+        for entity in self.active_entities:
+            if entity["name"] is string:
+                return entity
+        else:
+            try:
+                with open("data/%s.json"%string, 'r') as f:
+                    entity = json.load(f)
+            except IOError:
+                print "Couldn't find %s"%string
+                entity = None
+        return entity
+
+    def do_roll(self, string):
+        _,_,_,_, result = roll.parse(string)
+        print result
+
+    def do_exit(self, string):
+        return True
+
+    def do_EOF(self, string):
+        return True
+
+if __name__ == '__main__':
+    DMTools().cmdloop()
