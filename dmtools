@@ -8,32 +8,54 @@ class DMTools(cmd.Cmd):
     prompt = "\ndmtools > "
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.active_entities = []
+        self.active_entities = {}
+	try:
+            with open("data_path.config", 'r') as f:
+                self.data_path = f.readline()
+                if self.data_path.endswith('\n'):
+                    self.data_path = self.data_path[:-1]
+        except IOError:
+            with open("data_path.config", 'w') as f:
+                f.write("data/")
 
     def do_describe(self, string):
         entity = self.load(string)
-        if entity is not None:
+        if "description" in entity:
             print entity["description"]
 
     def do_d(self, string):
         self.do_describe(string)
 
+    def do_forget(self, string):
+        self.active_entities = {}
+
     def load(self, string):
-        for entity in self.active_entities:
-            if entity["name"] is string:
-                return entity
+        if string in self.active_entities:
+            return self.active_entities[string]
         else:
             try:
-                with open("data/%s.json"%string, 'r') as f:
+                with open("%s%s.json"%(self.data_path, string), 'r') as f:
                     entity = json.load(f)
             except IOError:
-                print "Couldn't find %s"%string
-                entity = None
+                print "Couldn't find %s in %s"%(string, self.data_path)
+                entity = {}
+		self.active_entities[string] = entity
         return entity
 
     def do_roll(self, string):
         _,_,_,_, result = roll.parse(string)
         print result
+
+    def do_save(self, string):
+        for key in self.active_entities:
+            with open("%s%s.json"%(self.data_path, key), 'w') as f:
+                json.dump(self.active_entities[key], f)
+
+    def do_set(self, string):
+        name, property, value = string.split(" ", 2)
+        entity = self.load(name)
+	entity[property] = value
+        print entity
 
     def do_exit(self, string):
         return True
