@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 
 import cmd
+import encounter
 import json
+import printing
 import roll
 
 class DMTools(cmd.Cmd):
     prompt = "\ndmtools > "
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.active_entities = {}
+        self.active_entities = {"encounter":[]}
+        self.previous = None
+        self.current_id = 0
 	try:
             with open("data_path.config", 'r') as f:
                 self.data_path = f.readline()
@@ -17,45 +21,105 @@ class DMTools(cmd.Cmd):
         except IOError:
             with open("data_path.config", 'w') as f:
                 f.write("data/")
+                
+    def do_active(self, string):
+        printing.print_json(self.active_entities)
 
     def do_describe(self, string):
         entity = self.load(string)
         if "description" in entity:
             print entity["description"]
+            self.previous = entity
 
     def do_d(self, string):
         self.do_describe(string)
+        
+    def do_encounter(self, string):
+        npcs = encounter.parse(string)
+        for group in npcs:
+            for i in range(group[1]):
+                entity = self.load_json(group[0])
+                entity["key"] = self.get_next_id()
+                entity["hp"] = roll.parse(entity["hp"])
+                self.active_entities["encounter"].append(entity)
+        self.do_status("")
 
     def do_forget(self, string):
-        self.active_entities = {}
+        self.active_entities = {"encounter":[]}
+        
+    def get_next_id(self):
+        self.current_id += 1
+        return self.current_id
+        
+    def do_info(self, string):
+        entity = self.load(string)
+        printing.print_json(entity)
 
     def load(self, string):
         if string in self.active_entities:
             return self.active_entities[string]
         else:
-            try:
-                with open("%s%s.json"%(self.data_path, string), 'r') as f:
+            for npc in self.active_entities["encounter"]:
+                if str(npc["key"]) is string:
+                    return npc
+            entity = self.load_json(string)
+        self.active_entities[string] = entity
+        return self.active_entities[string]
+        
+    def load_json(self, string):
+        try:
+            with open("%s%s.json"%(self.data_path, string), 'r') as f:
                     entity = json.load(f)
-            except IOError:
-                print "Couldn't find %s in %s"%(string, self.data_path)
-                entity = {}
-		self.active_entities[string] = entity
+        except IOError:
+            print "Couldn't find %s in %s"%(string, self.data_path)
+            entity = {}
         return entity
+        
+    def do_next(self, string):
+        if self.previous and "next" in self.previous:
+            self.do_describe(self.previous["next"])
+            
+    def do_n(self, string):
+        self.do_next(string)
+        
+    def do_previous(self, string):
+        if self.previous:
+            print self.previous["description"]
+            
+    def do_p(self, string):
+        self.do_previous(string)
 
     def do_roll(self, string):
-        _,_,_,_, result = roll.parse(string)
+        _,_,_,_, result = roll.parse(string, value_only=False)
         print result
 
     def do_save(self, string):
-        for key in self.active_entities:
+        if len(string) > 0:
+            if string in self.active_entities:
+                entities_to_save = [string]
+            else:
+                print "%s is not an active entity!"%string
+                return
+        else:
+            entities_to_save = self.active_entities
+        for key in entities_to_save:
             with open("%s%s.json"%(self.data_path, key), 'w') as f:
-                json.dump(self.active_entities[key], f)
+                json.dump(self.active_entities[key], f, sort_keys=True,
+                    indent=4, separators=(',', ': '))
 
     def do_set(self, string):
         name, property, value = string.split(" ", 2)
         entity = self.load(name)
-	entity[property] = value
-        print entity
+        entity[property] = value
+        
+    def do_status(self, string):
+        status_table = printing.table(
+            ["key", "Name", "HP", "AC", "Attack", "Damage"])
+        for npc in self.active_entities["encounter"]:
+            status_table.add_row(
+                [npc["key"], npc["name"], npc["hp"], npc["ac"], npc["attack"],
+                    npc["damage"]])
+        print status_table
 
     def do_exit(self, string):
         return True

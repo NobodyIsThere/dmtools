@@ -4,7 +4,7 @@ import argparse
 import random
 import re
 
-def parse(string):
+def parse(string, value_only=True):
     pattern = '((\d+)?(d(\d+)))?(([+-])?(\d))?'
     inp = re.match(pattern, string)
     groups = inp.groups()
@@ -19,6 +19,8 @@ def parse(string):
     mod = groups[6]
     
     if mod and not op:
+        if value_only:
+            return int(mod)
         return int(mod), None, None, int(mod), str(mod)
     
     if not num_dice:
@@ -35,6 +37,9 @@ def parse(string):
     for i in range(int(num_dice)):
         total += random.randint(1, int(type_dice))
     result = total + mod if op is '+' else total - mod
+    
+    if value_only:
+        return result
     if op is None or mod is 0:
         string = str(result)
     else:
@@ -48,5 +53,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     for i in range(2 if args.twice else 1):
-        total, op, mod, result, string = parse(args.string)
+        total, op, mod, result, string = parse(args.string, value_only=False)
         print string
