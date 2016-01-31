@@ -29,6 +29,8 @@ class DMTools(cmd.Cmd):
         entity = self.load(string)
         if "description" in entity:
             print entity["description"]
+            if "next" in entity:
+                print "Next: %s"%entity["next"]
             self.previous = entity
 
     def do_d(self, string):
