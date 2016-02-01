@@ -10,10 +10,7 @@ class DMTools(cmd.Cmd):
     prompt = "\ndmtools > "
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.active_entities = {"encounter":[]}
-        self.previous = None
-        self.current_id = 0
-	try:
+        try:
             with open("data_path.config", 'r') as f:
                 self.data_path = f.readline()
                 if self.data_path.endswith('\n'):
@@ -21,6 +18,10 @@ class DMTools(cmd.Cmd):
         except IOError:
             with open("data_path.config", 'w') as f:
                 f.write("data/")
+        
+        self.active_entities = {"encounter":self.load_json("encounter")}
+        self.previous = None
+        self.current_id = 0
                 
     def do_active(self, string):
         printing.print_json(self.active_entities)
