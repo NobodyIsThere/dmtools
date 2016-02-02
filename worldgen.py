@@ -3,16 +3,26 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from noise import snoise2
 import numpy as np
+from PIL import Image
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
 MAP_WIDTH = 2.
 MAP_HEIGHT = 1.
 
-CONTINENT_SCALE = 2.5
+IMAGE_WIDTH = 1024
+IMAGE_HEIGHT = 512
+
+CONTINENT_SCALE = 1.5
 DETAIL = 0.5
 
 OCEAN = 0
 BARE = 1
+
+PERLIN_OCTAVES = 10
+PERLIN_PERSISTENCE = 0.7
+PERLIN_LACUNARITY = 2.0
+
+REDIST_STRENGTH = 1
 
 colors = \
 {
@@ -32,11 +42,8 @@ class Region(object):
         self.visited = False
 
 def generate(num_points=20000,
-             perlin_octaves=10,
-             perlin_persistence=0.8,
-             perlin_lacunarity=2.0,
-             water_level=0.01,
-             seed=1):
+             water_level=0.15,
+             seed=6):
     xpoints = np.random.uniform(high=MAP_WIDTH, size=num_points)
     ypoints = np.random.uniform(high=MAP_HEIGHT, size=num_points)
     points = zip(xpoints, ypoints)
@@ -66,26 +73,43 @@ def generate(num_points=20000,
     for region in regions:
         for i, vertex in enumerate(region.vertices):
             # Large-scale features
-            region.vertex_elevations[i] = \
-                0 if snoise2(CONTINENT_SCALE*vertex[0],
-                    CONTINENT_SCALE*vertex[1],
-                    octaves=1, base=2*seed, repeatx=MAP_WIDTH*CONTINENT_SCALE) \
-                    > 0 else -1
-            region.vertex_elevations[i] += \
-                DETAIL*snoise2(vertex[0], vertex[1],
-                    octaves=perlin_octaves, persistence=perlin_persistence,
-                    lacunarity=perlin_lacunarity,
-                    base=seed, repeatx=MAP_WIDTH)
+            region.vertex_elevations[i] = generate_elevation(
+                vertex[0], vertex[1], seed, water_level)
         region.elevation = np.mean(region.vertex_elevations)
     
     for region in regions:
-        region.elevation += water_level
         if region.elevation > 1:
             region.elevation = 1
         if region.elevation < 0:
             region.biome = OCEAN
     
-    draw(regions)
+    data = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH))
+    for i in range(IMAGE_HEIGHT):
+        for j in range(IMAGE_WIDTH):
+            data[i,j] = generate_elevation(
+                MAP_WIDTH*(float(j)/IMAGE_WIDTH),
+                MAP_HEIGHT*(float(i)/IMAGE_HEIGHT),
+                seed, water_level)
+    # rescale
+    data -= (np.amin(data))
+    data /= np.amax(data)
+    data = 2*data - 1
+    data = np.exp(data)-1
+    data[data < water_level] = 0
+    data[data > 0] = 1
+    plt.imshow(data)
+    plt.show()
+    #draw(regions)
+    
+def generate_elevation(x, y, seed, water_level):
+    #e = 0 if snoise2(CONTINENT_SCALE*x, CONTINENT_SCALE*y,
+    #    octaves=1, base=2*seed, repeatx=MAP_WIDTH*CONTINENT_SCALE) < 0 \
+    #    else -1
+    e = 0
+    e += DETAIL*snoise2(CONTINENT_SCALE*x, CONTINENT_SCALE*y, octaves=PERLIN_OCTAVES,
+        persistence=PERLIN_PERSISTENCE, lacunarity=PERLIN_LACUNARITY,
+        base=seed, repeatx=MAP_WIDTH*CONTINENT_SCALE)
+    return e
 
 def generate_mountains(region, dir, det, dropoff, noise):
     regions = region.neighbours
