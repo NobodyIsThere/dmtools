@@ -63,7 +63,7 @@ class DMTools(cmd.Cmd):
             return self.active_entities[string]
         else:
             for npc in self.active_entities["encounter"]:
-                if str(npc["key"]) is string:
+                if str(npc["key"]) == str(string):
                     return npc
             entity = self.load_json(string)
         self.active_entities[string] = entity
@@ -113,7 +113,12 @@ class DMTools(cmd.Cmd):
     def do_set(self, string):
         name, property, value = string.split(" ", 2)
         entity = self.load(name)
-        entity[property] = value
+        if value.startswith("--") or value.startswith("++"):
+            mod = int(value[2:])
+            entity[property] = int(entity[property]) - mod \
+                if value.startswith("--") else int(entity[property]) + mod
+        else:
+            entity[property] = value
         
     def do_status(self, string):
         status_table = printing.table(
