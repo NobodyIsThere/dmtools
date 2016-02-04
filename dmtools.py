@@ -6,19 +6,23 @@ import json
 import printing
 import roll
 
+def get_data_path():
+    try:
+        with open("data_path.config", 'r') as f:
+            data_path = f.readline()
+            if data_path.endswith('\n'):
+                data_path = data_path[:-1]
+            return data_path
+    except IOError:
+        with open("data_path.config", 'w') as f:
+            f.write("data/")
+        return "data/"
+
 class DMTools(cmd.Cmd):
     prompt = "\ndmtools > "
     def __init__(self):
         cmd.Cmd.__init__(self)
-        try:
-            with open("data_path.config", 'r') as f:
-                self.data_path = f.readline()
-                if self.data_path.endswith('\n'):
-                    self.data_path = self.data_path[:-1]
-        except IOError:
-            with open("data_path.config", 'w') as f:
-                f.write("data/")
-        
+        self.data_path = get_data_path()
         self.active_entities = {"encounter":self.load_json("encounter")}
         self.previous = None
         self.current_id = 0
