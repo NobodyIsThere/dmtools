@@ -249,11 +249,19 @@ def generate_biomes(data_path):
     img[elevation == 0] = OCEAN
     plt.imshow(img)
     plt.show()
+    pickle.dump(img, open(data_path+"biomes.pkl", 'wb'))
+
+def render_image(data_path):
+    elevation = pickle.load(open(data_path+"elevation.pkl", 'rb'))
+    biomes = pickle.load(open(data_path+"biomes.pkl", 'rb'))
 
     final_image = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.uint8)
     for i in range(IMAGE_HEIGHT):
         for j in range(IMAGE_WIDTH):
-            final_image[i,j,:] = biome_colours[img[i,j]]
+            final_image[i,j,:] = biome_colours[biomes[i,j]]
+
+    noise = np.random.randint(2, size=(IMAGE_HEIGHT, IMAGE_WIDTH, 1))
+    final_image += np.tile(noise, (1,1,3)).astype(np.uint8)
     plt.imshow(final_image)
     plt.show()
    
