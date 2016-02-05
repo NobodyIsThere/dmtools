@@ -1,9 +1,11 @@
 from collections import deque
+import cPickle as pickle
 import dmtools
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from noise import snoise2
 import numpy as np
+import os.path
 from scipy.misc import imresize
 from scipy.ndimage import imread, gaussian_filter
 from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -13,7 +15,7 @@ MAP_HEIGHT = 1.
 
 IMAGE_WIDTH = 1024
 IMAGE_HEIGHT = IMAGE_WIDTH/2
-EQUATOR_LEVEL = IMAGE_HEIGHT/2
+EQUATOR_LEVEL = IMAGE_HEIGHT/4
 
 CONTINENT_SCALE = 1.5
 DETAIL = 0.5
@@ -33,6 +35,22 @@ TAIGA = 10
 TUNDRA = 11
 SNOW = 12
 
+biome_colours = {
+    OCEAN: [0, 0, 255],
+    BARE: [100, 100, 100],
+    TROPICAL_RAINFOREST: [0, 153, 0],
+    TROPICAL_SEASONAL_FOREST: [102, 153, 0],
+    SAVANNAH: [255, 255, 153],
+    DESERT: [255, 255, 102],
+    TEMPERATE_RAINFOREST: [51, 153, 51],
+    TEMPERATE_FOREST: [0, 102, 0],
+    WOODLAND: [255, 102, 0],
+    GRASSLAND: [255, 204, 0],
+    TAIGA: [0, 51, 0],
+    TUNDRA: [102, 51, 0],
+    SNOW: [255, 255, 255]
+}
+
 PERLIN_OCTAVES = 10
 PERLIN_PERSISTENCE = 0.7
 PERLIN_LACUNARITY = 2.0
@@ -46,7 +64,7 @@ REDIST_STRENGTH = 1.5
 
 ELEVATION_TEMP_CONTRIBUTION = 0.01
 
-NGRID_X = IMAGE_WIDTH
+NGRID_X = 1024
 NGRID_Y = NGRID_X/2
 
 colors = \
@@ -71,18 +89,26 @@ def generate(water_level=0.15,
              show_france=True):
 
     data_path = dmtools.get_data_path()
-    
-    # First, generate coastline.
+    generate_coastline(data_path, water_level, show_france, seed)
+    generate_elevation(data_path, seed)
+    generate_temperature(data_path)
+    generate_wind(data_path, seed)
+    generate_moisture(data_path)
+    generate_biomes(data_path)
+
+def generate_coastline(data_path, water_level, show_france, seed):
+    if os.path.isfile(data_path + "coastline.pkl"):
+        # Already did this.
+        return
     data = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH))
     for i in range(IMAGE_HEIGHT):
         for j in range(IMAGE_WIDTH):
-            data[i,j] = generate_elevation(
+            data[i,j] = get_elevation(
                 MAP_WIDTH*(float(j)/IMAGE_WIDTH),
                 MAP_HEIGHT*(float(i)/IMAGE_HEIGHT),
                 seed)
     
-    elevation = np.copy(data)
-    # rescale to be in [-1, 1]
+    pickle.dump(data, open(data_path+"rough_elevation.pkl", 'wb'))
     data = rescale(data)
     data = np.exp(data)-1
     data[data < water_level] = 0
@@ -99,21 +125,32 @@ def generate(water_level=0.15,
         data[france_y:france_y+france_w, france_x:france_x+france_h] = france
     plt.imshow(data)
     plt.show()
+    pickle.dump(data, open(data_path+"coastline.pkl", 'wb'))
 
-    # Now generate mountains
+def generate_elevation(data_path, seed):
+    if os.path.isfile(data_path + "elevation.pkl"):
+        return
+    coastline = pickle.load(open(data_path+"coastline.pkl", 'rb'))
+    elevation = pickle.load(open(data_path+"rough_elevation.pkl", 'rb'))
+
     for i in range(IMAGE_HEIGHT):
         for j in range(IMAGE_WIDTH):
-            elevation[i,j] += generate_elevation(
+            elevation[i,j] += get_elevation(
                     MAP_WIDTH*DETAIL_SCALE*(float(j)/IMAGE_WIDTH),
                     MAP_HEIGHT*DETAIL_SCALE*(float(i)/IMAGE_HEIGHT),
                     seed)
     elevation = np.exp(REDIST_STRENGTH*elevation)
-    data = data * elevation
-    plt.imshow(data)
+    elevation = coastline * elevation
+    plt.imshow(elevation)
     plt.show()
+    pickle.dump(elevation, open(data_path+"elevation.pkl", 'wb'))
 
-    # Now determine temperature
-    scaled_elevation = imresize(data, (NGRID_Y, NGRID_X))
+def generate_temperature(data_path):
+    if os.path.isfile(data_path + "temperature.pkl"):
+        return
+    
+    elevation = pickle.load(open(data_path+"elevation.pkl", 'rb'))
+    scaled_elevation = imresize(elevation, (NGRID_Y, NGRID_X))
     temp = np.zeros((NGRID_Y, NGRID_X))
     scaled_equator_level = EQUATOR_LEVEL*NGRID_Y/IMAGE_HEIGHT
     max_dist_from_equator = max([scaled_equator_level,
@@ -126,8 +163,12 @@ def generate(water_level=0.15,
     temp = rescale(temp)
     plt.imshow(temp)
     plt.show()
+    pickle.dump(temp, open(data_path+"temperature.pkl", 'wb'))
 
-    # Wind
+def generate_wind(data_path, seed):
+    if os.path.isfile(data_path + "wind.pkl"):
+        return
+
     wind = np.zeros((NGRID_Y, NGRID_X))
     for i in range(NGRID_Y):
         for j in range(NGRID_X):
@@ -138,8 +179,15 @@ def generate(water_level=0.15,
     wind = rescale(wind)
     plt.imshow(wind)
     plt.show()
+    pickle.dump(wind, open(data_path+"wind.pkl", 'wb'))
 
-    # Moisture
+def generate_moisture(data_path):
+    if os.path.isfile(data_path + "moisture.pkl"):
+        return
+
+    elevation = pickle.load(open(data_path+"elevation.pkl", 'rb'))
+    scaled_elevation = imresize(elevation, (NGRID_Y, NGRID_X))
+    wind = pickle.load(open(data_path+"wind.pkl", 'rb'))
     moisture = np.zeros((NGRID_Y, NGRID_X))
     for i in range(NGRID_Y):
         for j in range(NGRID_X):
@@ -165,19 +213,25 @@ def generate(water_level=0.15,
     moisture = gaussian_filter(moisture, 2)
     plt.imshow(moisture)
     plt.show()
+    pickle.dump(moisture, open(data_path+"moisture.pkl", 'wb'))
 
-    # Biomes
+def generate_biomes(data_path):
+    if os.path.isfile(data_path + "biomes.pkl"):
+        return
+    
+    moisture = pickle.load(open(data_path+"moisture.pkl", 'rb'))
     moisture = imresize(moisture, (IMAGE_HEIGHT, IMAGE_WIDTH))
     plt.imshow(moisture)
     plt.show()
-    moisture = np.digitize(moisture, [0, 100, 150, 200, 255])-1
+    moisture = np.digitize(moisture, [0, 100, 170, 230, 255])-1
     moisture[moisture > 4] = 4
     plt.imshow(moisture)
     plt.show()
+    temp = pickle.load(open(data_path+"temperature.pkl", 'rb'))
     temp = imresize(temp, (IMAGE_HEIGHT, IMAGE_WIDTH))
     plt.imshow(temp)
     plt.show()
-    temp = np.digitize(temp, [0, 100, 140, 255])-1
+    temp = np.digitize(temp, [0, 90, 130, 255])-1
     temp[temp > 2] = 2
     plt.imshow(temp)
     plt.show()
@@ -191,7 +245,16 @@ def generate(water_level=0.15,
     for i in range(IMAGE_HEIGHT):
         for j in range(IMAGE_WIDTH):
             img[i,j] = biomes[temp[i,j]][moisture[i,j]]
+    elevation = pickle.load(open(data_path+"elevation.pkl", 'rb'))
+    img[elevation == 0] = OCEAN
     plt.imshow(img)
+    plt.show()
+
+    final_image = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.uint8)
+    for i in range(IMAGE_HEIGHT):
+        for j in range(IMAGE_WIDTH):
+            final_image[i,j,:] = biome_colours[img[i,j]]
+    plt.imshow(final_image)
     plt.show()
    
 def rescale(array):
@@ -200,7 +263,7 @@ def rescale(array):
     array = 2*array - 1
     return array
     
-def generate_elevation(x, y, seed=0):
+def get_elevation(x, y, seed=0):
     e = 0
     e += DETAIL*snoise2(CONTINENT_SCALE*x, CONTINENT_SCALE*y,
         octaves=PERLIN_OCTAVES,
