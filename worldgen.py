@@ -95,6 +95,7 @@ def generate(water_level=0.15,
     generate_wind(data_path, seed)
     generate_moisture(data_path)
     generate_biomes(data_path)
+    render_image(data_path)
 
 def generate_coastline(data_path, water_level, show_france, seed):
     if os.path.isfile(data_path + "coastline.pkl"):
@@ -260,8 +261,14 @@ def render_image(data_path):
         for j in range(IMAGE_WIDTH):
             final_image[i,j,:] = biome_colours[biomes[i,j]]
 
-    noise = np.random.randint(2, size=(IMAGE_HEIGHT, IMAGE_WIDTH, 1))
-    final_image += np.tile(noise, (1,1,3)).astype(np.uint8)
+    noise1 = np.random.randint(20, size=(IMAGE_HEIGHT, IMAGE_WIDTH, 1))
+    noise2 = np.random.randint(20, size=(IMAGE_HEIGHT, IMAGE_WIDTH, 1))
+    noise1 = np.tile(noise1, (1,1,3))
+    noise2 = np.tile(noise2, (1,1,3))
+    noise1[final_image > 255-noise1] = 0
+    noise2[final_image < noise2] = 0
+    final_image += noise1.astype(np.uint8)
+    final_image -= noise2.astype(np.uint8)
     plt.imshow(final_image)
     plt.show()
    
