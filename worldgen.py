@@ -35,16 +35,18 @@ TAIGA = 10
 TUNDRA = 11
 SNOW = 12
 
+SHADOW_STRENGTH = 2
+
 biome_colours = {
-    OCEAN: [0, 0, 255],
-    BARE: [100, 100, 100],
+    OCEAN: [0, 0, 153],
+    BARE: [50, 50, 50],
     TROPICAL_RAINFOREST: [0, 153, 0],
     TROPICAL_SEASONAL_FOREST: [102, 153, 0],
     SAVANNAH: [255, 255, 153],
     DESERT: [255, 255, 102],
     TEMPERATE_RAINFOREST: [51, 153, 51],
     TEMPERATE_FOREST: [0, 102, 0],
-    WOODLAND: [255, 102, 0],
+    WOODLAND: [51, 102, 0],
     GRASSLAND: [255, 204, 0],
     TAIGA: [0, 51, 0],
     TUNDRA: [102, 51, 0],
@@ -269,6 +271,18 @@ def render_image(data_path):
     noise2[final_image < noise2] = 0
     final_image += noise1.astype(np.uint8)
     final_image -= noise2.astype(np.uint8)
+    
+    # Light the image
+    light_vector = [3, 3]
+    shadows = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, 3))
+    for i in range(IMAGE_HEIGHT):
+        for j in range(IMAGE_WIDTH):
+            if i > light_vector[0] and i < IMAGE_HEIGHT+light_vector[0] and \
+                j > light_vector[1] and j < IMAGE_WIDTH+light_vector[1]:
+                if elevation[i-light_vector[0], j-light_vector[0]] > \
+                    elevation[i,j] and elevation[i,j] > 0:
+                    shadows[i,j,:] = 1
+    final_image[shadows == 1] /= SHADOW_STRENGTH
     plt.imshow(final_image)
     plt.show()
    
