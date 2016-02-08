@@ -13,7 +13,7 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 MAP_WIDTH = 2.
 MAP_HEIGHT = 1.
 
-IMAGE_WIDTH = 1024
+IMAGE_WIDTH = 3000
 IMAGE_HEIGHT = IMAGE_WIDTH/2
 EQUATOR_LEVEL = IMAGE_HEIGHT/4
 
@@ -273,15 +273,19 @@ def render_image(data_path):
     final_image -= noise2.astype(np.uint8)
     
     # Light the image
-    light_vector = [3, 3]
+    light = [12, 0.5] # [distance, elevation]
+    sign = -light[0]/abs(light[0])
     shadows = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, 3))
     for i in range(IMAGE_HEIGHT):
         for j in range(IMAGE_WIDTH):
-            if i > light_vector[0] and i < IMAGE_HEIGHT+light_vector[0] and \
-                j > light_vector[1] and j < IMAGE_WIDTH+light_vector[1]:
-                if elevation[i-light_vector[0], j-light_vector[0]] > \
-                    elevation[i,j] and elevation[i,j] > 0:
-                    shadows[i,j,:] = 1
+            for di, x in enumerate(range(i+1, i-(light[0]+1), sign)):
+                y = j+sign*(di+1)
+                if x > 0 and x < IMAGE_HEIGHT \
+                and y > 0 and y < IMAGE_WIDTH:
+                    if elevation[x,y] > di*light[1] + elevation[i,j] and \
+                        elevation[i,j] > 0:
+                        shadows[i,j] = 1
+                        break
     final_image[shadows == 1] /= SHADOW_STRENGTH
     plt.imshow(final_image)
     plt.show()
