@@ -23,7 +23,7 @@ class DMTools(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         self.data_path = get_data_path()
-        self.active_entities = {"encounter":self.load_json("encounter")}
+        self.active_entities = {"encounter":self.load_json("encounter"), "notes":[]}
         self.previous = None
         self.current_id = 0
                 
@@ -52,7 +52,7 @@ class DMTools(cmd.Cmd):
         self.do_status("")
 
     def do_forget(self, string):
-        self.active_entities = {"encounter":[]}
+        self.active_entities = {"encounter":[], "notes":[]}
         
     def get_next_id(self):
         self.current_id += 1
@@ -88,6 +88,9 @@ class DMTools(cmd.Cmd):
             
     def do_n(self, string):
         self.do_next(string)
+
+    def do_note(self, string):
+        self.active_entities["notes"].append(string)
         
     def do_previous(self, string):
         if self.previous:
@@ -133,7 +136,41 @@ class DMTools(cmd.Cmd):
                     npc["damage"]])
         print status_table
 
+    def do_treasure(self, string):
+        num, cr = string.split()
+        amount = 0
+        denom = "gp"
+        cr = int(cr)
+        num = int(num)
+        if cr == 0:
+            for i in range(num):
+                amount += roll.parse("1d10")
+                denom = "cp"
+        elif cr < 5:
+            result = roll.parse("d100")
+            for i in range(num):
+                if result < 31:
+                    amount += roll.parse("5d6")
+                    denom = "cp"
+                elif result < 61:
+                    amount += roll.parse("4d6")
+                    denom = "sp"
+                elif result < 71:
+                    amount += roll.parse("3d6")*10
+                    denom = "sp"
+                elif result < 96:
+                    amount += roll.parse("3d6")
+                    denom = "gp"
+                else:
+                    amount += roll.parse("1d6")*10
+                    denom = "gp"
+        print "%i %s"%(amount, denom)
+
     def do_exit(self, string):
+        return True
+
+    def do_sexit(self, string):
+        self.do_save(string)
         return True
 
     def do_EOF(self, string):
