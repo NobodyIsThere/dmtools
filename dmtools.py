@@ -23,7 +23,7 @@ class DMTools(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         self.data_path = get_data_path()
-        self.active_entities = {"encounter":self.load_json("encounter")}
+        self.active_entities = {"encounter":self.load_json("encounter"), "notes":[]}
         self.previous = None
         self.current_id = 0
                 
@@ -52,7 +52,7 @@ class DMTools(cmd.Cmd):
         self.do_status("")
 
     def do_forget(self, string):
-        self.active_entities = {"encounter":[]}
+        self.active_entities = {"encounter":[], "notes":[]}
         
     def get_next_id(self):
         self.current_id += 1
@@ -88,6 +88,46 @@ class DMTools(cmd.Cmd):
             
     def do_n(self, string):
         self.do_next(string)
+
+    def do_note(self, string):
+        self.active_entities["notes"].append(string)
+
+    def do_npc(self, string):
+        # Race and sex of random NPC in a human-dominated area
+        law = roll.parse("d3")
+        if law == 1:
+            law = "L"
+        else:
+            law = "C" if law == 2 else "N"
+        moral = roll.parse("d3")
+        if moral == 1:
+            moral = "G"
+        else:
+            moral = "E" if moral == 2 else "N"
+        sex = roll.parse("d2")
+        sex = "Male" if sex == 1 else "Female"
+        race = roll.parse("d20")
+        if race < 15:
+            race = "Human"
+        elif race < 17:
+            race = "Dwarf"
+        elif race == 17:
+            race = "Halfling"
+        elif race == 18:
+            race = "Gnome"
+        elif race == 19:
+            race = "Elf"
+        else:
+            race = roll.parse("d10")
+            if race < 7:
+                race = "Half-elf"
+            elif race < 9:
+                race = "Half-orc"
+            elif race == 9:
+                race = "Dragonborn"
+            else:
+                race = "Tiefling"
+        print "%s %s (%s%s)"%(sex, race, law, moral)
         
     def do_npc(self, string):
         # Race and sex of random NPC in a human-dominated area
@@ -170,7 +210,41 @@ class DMTools(cmd.Cmd):
                     npc["damage"]])
         print status_table
 
+    def do_treasure(self, string):
+        num, cr = string.split()
+        amount = 0
+        denom = "gp"
+        cr = int(cr)
+        num = int(num)
+        if cr == 0:
+            for i in range(num):
+                amount += roll.parse("1d10")
+                denom = "cp"
+        elif cr < 5:
+            result = roll.parse("d100")
+            for i in range(num):
+                if result < 31:
+                    amount += roll.parse("5d6")
+                    denom = "cp"
+                elif result < 61:
+                    amount += roll.parse("4d6")
+                    denom = "sp"
+                elif result < 71:
+                    amount += roll.parse("3d6")*10
+                    denom = "sp"
+                elif result < 96:
+                    amount += roll.parse("3d6")
+                    denom = "gp"
+                else:
+                    amount += roll.parse("1d6")*10
+                    denom = "gp"
+        print "%i %s"%(amount, denom)
+
     def do_exit(self, string):
+        return True
+
+    def do_sexit(self, string):
+        self.do_save(string)
         return True
 
     def do_EOF(self, string):
@@ -178,3 +252,5 @@ class DMTools(cmd.Cmd):
 
 if __name__ == '__main__':
     DMTools().cmdloop()
+
+
