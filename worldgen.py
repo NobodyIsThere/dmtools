@@ -97,7 +97,8 @@ def generate(water_level=0.15,
     generate_wind(data_path, seed)
     generate_moisture(data_path)
     generate_biomes(data_path)
-    render_image(data_path)
+    #render_image(data_path)
+    generate_history(data_path)
 
 def generate_coastline(data_path, water_level, show_france, seed):
     if os.path.isfile(data_path + "coastline.pkl"):
@@ -289,6 +290,27 @@ def render_image(data_path):
     final_image[shadows == 1] /= SHADOW_STRENGTH
     plt.imshow(final_image)
     plt.show()
+	
+def generate_map(data_path, grid_x=200, grid_y=100):
+    elevation = pickle.load(open(data_path+"elevation.pkl", 'rb'))
+    elevation = rescale(elevation)
+    biomes = pickle.load(open(data_path+"biomes.pkl", 'rb'))
+	
+    map = np.zeros((grid_y, grid_x))
+    for i in range(grid_y):
+        for j in range(grid_x):
+            x = (float(i)/grid_y)*biomes.shape[0]
+            y = (float(j)/grid_x)*biomes.shape[1]
+            if biomes[x,y] != OCEAN:
+                if elevation[x,y] > 0.3:
+                    map[i,j] = 2
+                else:
+                    map[i,j] = 1
+            else:
+                map[i,j] = 0
+	
+def generate_history(data_path):
+    geography = generate_map(data_path)
    
 def rescale(array):
     array -= (np.amin(array))

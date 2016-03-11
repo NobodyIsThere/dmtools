@@ -3,6 +3,7 @@
 import cmd
 import encounter
 import json
+import names
 import printing
 import roll
 
@@ -88,6 +89,12 @@ class DMTools(cmd.Cmd):
             
     def do_n(self, string):
         self.do_next(string)
+        
+    def do_name(self, string):
+        name = names.generate_name(string)
+        while len(name) < 3:
+            name = names.generate_name(string)
+        print name
 
     def do_note(self, string):
         self.active_entities["notes"].append(string)
