@@ -4,6 +4,7 @@ import cmd
 import encounter
 import json
 import names
+import npc
 import printing
 import roll
 
@@ -98,80 +99,10 @@ class DMTools(cmd.Cmd):
 
     def do_note(self, string):
         self.active_entities["notes"].append(string)
-
-    def do_npc(self, string):
-        # Race and sex of random NPC in a human-dominated area
-        law = roll.parse("d3")
-        if law == 1:
-            law = "L"
-        else:
-            law = "C" if law == 2 else "N"
-        moral = roll.parse("d3")
-        if moral == 1:
-            moral = "G"
-        else:
-            moral = "E" if moral == 2 else "N"
-        sex = roll.parse("d2")
-        sex = "Male" if sex == 1 else "Female"
-        race = roll.parse("d20")
-        if race < 15:
-            race = "Human"
-        elif race < 17:
-            race = "Dwarf"
-        elif race == 17:
-            race = "Halfling"
-        elif race == 18:
-            race = "Gnome"
-        elif race == 19:
-            race = "Elf"
-        else:
-            race = roll.parse("d10")
-            if race < 7:
-                race = "Half-elf"
-            elif race < 9:
-                race = "Half-orc"
-            elif race == 9:
-                race = "Dragonborn"
-            else:
-                race = "Tiefling"
-        print "%s %s (%s%s)"%(sex, race, law, moral)
         
     def do_npc(self, string):
-        # Race and sex of random NPC in a human-dominated area
-        law = roll.parse("d3")
-        if law == 1:
-            law = "L"
-        else:
-            law = "C" if law == 2 else "N"
-        moral = roll.parse("d3")
-        if moral == 1:
-            moral = "G"
-        else:
-            moral = "E" if moral == 2 else "N"
-        sex = roll.parse("d2")
-        sex = "Male" if sex == 1 else "Female"
-        race = roll.parse("d20")
-        if race < 15:
-            race = "Human"
-        elif race < 17:
-            race = "Dwarf"
-        elif race == 17:
-            race = "Halfling"
-        elif race == 18:
-            race = "Gnome"
-        elif race == 19:
-            race = "Elf"
-        else:
-            race = roll.parse("d10")
-            if race < 7:
-                race = "Half-elf"
-            elif race < 9:
-                race = "Half-orc"
-            elif race == 9:
-                race = "Dragonborn"
-            else:
-                race = "Tiefling"
-        print "%s %s (%s%s)"%(sex, race, law, moral)
+        n = npc.generate_npc(string=string)
+        print n.description()
             
     def do_previous(self, string):
         if self.previous:
