@@ -32,8 +32,6 @@ def get_next_token(tokens, all_tokens, data, min_length, depth=3):
     for i, t in enumerate(data[:-depth]):
         for j in range(len(tokens)+1):
             if j <= depth:
-                #print data[i:i+j]
-                #print tokens[-j:]
                 if data[i:i+j] == tokens[-j:]:
                     choices.append(data[i+j])
     choice = random.choice(choices)

@@ -1,5 +1,6 @@
 import dmtools
 import names
+import random
 import roll
 
 # Constants
@@ -47,7 +48,7 @@ class NPC(object):
     def notes_str(self):
         return_string = ""
         for note in self.notes:
-            return_string.append(" - " + note + "\n")
+            return_string += " - " + note + "\n"
         return return_string
     def sex_str(self):
         if self.sex == 1:
@@ -71,36 +72,38 @@ def generate_name(race):
 def generate_notes(moral_alignment, law_alignment):
     data_path = dmtools.get_data_path()
     with open(data_path + "npcs/appearance.txt") as f:
-        appearance = random.choice(f.readlines())
+        appearance = random.choice(f.readlines()).strip()
     with open(data_path + "npcs/mannerisms.txt") as f:
-        mannerism = random.choice(f.readlines())
+        mannerism = random.choice(f.readlines()).strip()
     with open(data_path + "npcs/interaction.txt") as f:
-        interaction = random.choice(f.readlines())
+        interaction = random.choice(f.readlines()).strip()
     with open(data_path + "npcs/abilities.txt") as f:
-        ability1 = random.choice(f.readlines())
-        ability2 = random.choice(f.readlines())
+        abilities = f.readlines()
+        ability1 = random.choice(abilities)
+        abilities.remove(ability1)
+        ability1 = ability1.strip()
+        ability2 = random.choice(abilities).strip()
     with open(data_path + "npcs/talents.txt") as f:
-        talent = random.choice(f.readlines())
+        talent = random.choice(f.readlines()).strip()
     with open(data_path + "npcs/ideals_"
               + alignment_to_string[moral_alignment] + ".txt") as f:
-        moral_ideal = random.choice(f.readlines())
+        moral_ideal = random.choice(f.readlines()).strip()
     with open(data_path + "npcs/ideals_"
-              + alignment_to_string[law_alignment]) as f:
-        law_ideal = random.choice(f.readlines())
+              + alignment_to_string[law_alignment] + ".txt") as f:
+        law_ideal = random.choice(f.readlines()).strip()
     with open(data_path + "npcs/bonds.txt") as f:
-        bond = random.choice(f.readlines())
+        bond = random.choice(f.readlines()).strip()
     with open(data_path + "npcs/flaws.txt") as f:
-        flaw = random.choice(f.readlines())
+        flaw = random.choice(f.readlines()).strip()
     
     return [appearance,
             mannerism,
             interaction,
             ability1, ability2,
             talent,
-            moral_ideal,
-            law_ideal,
-            bond,
-            flaw]
+            "Ideals: " + moral_ideal + ", " + law_ideal.lower(),
+            "Bond: " + bond,
+            "Flaw: " + flaw]
 
 def generate_npc(string=""):
         npc = NPC()
@@ -138,7 +141,7 @@ def generate_npc(string=""):
                 npc.race = "Tiefling"
         npc.name = generate_name(npc.race)
         npc.trade = generate_trade()
-        npc.notes = generate_notes()
+        npc.notes = generate_notes(npc.moral_alignment, npc.law_alignment)
         return npc
 
 def generate_trade():
