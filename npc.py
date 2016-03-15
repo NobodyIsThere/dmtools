@@ -1,3 +1,4 @@
+import dmtools
 import names
 import roll
 
@@ -67,8 +68,39 @@ def generate_name(race):
         return names.generate_name(race) + " " + names.generate_name(race)
     return names.generate_name(race)
 
-def generate_notes():
-    return []
+def generate_notes(moral_alignment, law_alignment):
+    data_path = dmtools.get_data_path()
+    with open(data_path + "npcs/appearance.txt") as f:
+        appearance = random.choice(f.readlines())
+    with open(data_path + "npcs/mannerisms.txt") as f:
+        mannerism = random.choice(f.readlines())
+    with open(data_path + "npcs/interaction.txt") as f:
+        interaction = random.choice(f.readlines())
+    with open(data_path + "npcs/abilities.txt") as f:
+        ability1 = random.choice(f.readlines())
+        ability2 = random.choice(f.readlines())
+    with open(data_path + "npcs/talents.txt") as f:
+        talent = random.choice(f.readlines())
+    with open(data_path + "npcs/ideals_"
+              + alignment_to_string[moral_alignment] + ".txt") as f:
+        moral_ideal = random.choice(f.readlines())
+    with open(data_path + "npcs/ideals_"
+              + alignment_to_string[law_alignment]) as f:
+        law_ideal = random.choice(f.readlines())
+    with open(data_path + "npcs/bonds.txt") as f:
+        bond = random.choice(f.readlines())
+    with open(data_path + "npcs/flaws.txt") as f:
+        flaw = random.choice(f.readlines())
+    
+    return [appearance,
+            mannerism,
+            interaction,
+            ability1, ability2,
+            talent,
+            moral_ideal,
+            law_ideal,
+            bond,
+            flaw]
 
 def generate_npc(string=""):
         npc = NPC()
