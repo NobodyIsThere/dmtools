@@ -123,11 +123,15 @@ class DMTools(cmd.Cmd):
                 print "%s is not an active entity!"%string
                 return
         else:
+            if len(self.active_entities["notes"]) == 0:
+                del self.active_entities["notes"]
             entities_to_save = self.active_entities
         for key in entities_to_save:
             with open("%s%s.json"%(self.data_path, key), 'w') as f:
                 json.dump(self.active_entities[key], f, sort_keys=True,
                     indent=4, separators=(',', ': '))
+        if not "notes" in self.active_entities:
+            self.active_entities["notes"] = []
 
     def do_set(self, string):
         name, property, value = string.split(" ", 2)
