@@ -50,6 +50,7 @@ class DMTools(cmd.Cmd):
                 entity = self.load_json(group[0])
                 entity["key"] = self.get_next_id()
                 entity["hp"] = roll.parse(entity["hp"])
+                entity["initiative"] = roll.parse(entity["DEX"])
                 self.active_entities["encounter"].append(entity)
         self.do_status("")
 
@@ -145,11 +146,11 @@ class DMTools(cmd.Cmd):
         
     def do_status(self, string):
         status_table = printing.table(
-            ["key", "Name", "HP", "AC", "Attack", "Damage"])
+            ["key", "Name", "HP", "AC", "Attack", "Damage", "Initiative"])
         for npc in self.active_entities["encounter"]:
             status_table.add_row(
                 [npc["key"], npc["name"], npc["hp"], npc["ac"], npc["attack"],
-                    npc["damage"]])
+                    npc["damage"], npc["initiative"]])
         print status_table
 
     def do_treasure(self, string):
