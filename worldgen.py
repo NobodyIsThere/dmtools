@@ -97,8 +97,8 @@ def generate(water_level=0.15,
     generate_wind(data_path, seed)
     generate_moisture(data_path)
     generate_biomes(data_path)
-    #render_image(data_path)
     generate_history(data_path)
+    render_image(data_path)
 
 def generate_coastline(data_path, water_level, show_france, seed):
     if os.path.isfile(data_path + "coastline.pkl"):

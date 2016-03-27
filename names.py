@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-from dmtools import get_data_path
+import dmtools
 import random
 
 START_TOKEN = -2
 END_TOKEN = -1
 
 def load_tokens(type):
-    path = get_data_path() + "names/"
+    path = dmtools.get_data_path() + "names/"
     path += type + "_tokens.txt"
     string_to_token = {">": END_TOKEN, "<": START_TOKEN}
     token_to_string = {END_TOKEN: ">", START_TOKEN: "<"}
@@ -18,7 +18,7 @@ def load_tokens(type):
     return string_to_token, token_to_string
     
 def load_names(type, string_to_token):
-    path = get_data_path() + "names/"
+    path = dmtools.get_data_path() + "names/"
     path += type + "_names.txt"
     data = []
     with open(path, 'rb') as f:
