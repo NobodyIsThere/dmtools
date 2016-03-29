@@ -36,11 +36,11 @@ def parse(string, value_only=True):
     total = 0
     for i in range(int(num_dice)):
         total += random.randint(1, int(type_dice))
-    result = total + mod if op is '+' else total - mod
+    result = total + mod if op == '+' else total - mod
     
     if value_only:
         return result
-    if op is None or mod is 0:
+    if not op or mod == 0:
         string = str(result)
     else:
         string = "%i %s %i = %i"%(total, op, mod, result)
