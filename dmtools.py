@@ -143,6 +143,8 @@ class DMTools(cmd.Cmd):
                 if value.startswith("--") else int(entity[property]) + mod
         else:
             entity[property] = value
+        if entity in self.active_entities["encounter"]:
+            self.do_status("")
         
     def do_status(self, string):
         status_table = printing.table(
