@@ -5,7 +5,7 @@ import random
 import re
 
 def parse(string, value_only=True):
-    pattern = '((\d+)?(d(\d+)))?(([+-])?(\d))?'
+    pattern = '((\d+)?(d(\d+)))?(([+-])?(\d+))?'
     inp = re.match(pattern, string)
     groups = inp.groups()
     # groups:
