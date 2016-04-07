@@ -5,6 +5,7 @@ import encounter
 import json
 import names
 import npc
+import os
 import printing
 import roll
 
@@ -25,7 +26,11 @@ class DMTools(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         self.data_path = get_data_path()
-        self.active_entities = {"encounter":self.load_json("encounter"), "notes":[]}
+        self.active_entities = \
+            {
+                "encounter": self.load_json("encounter"),
+                "notes": []
+            }
         self.previous = None
         self.current_id = 0
                 
@@ -84,6 +89,10 @@ class DMTools(cmd.Cmd):
             print "Couldn't find %s in %s"%(string, self.data_path)
             entity = {}
         return entity
+        
+    def load_players(self):
+        for name in os.listdir("%s/players"%self.data_path):
+            self.load("players/%s"%name[:-5])
         
     def do_next(self, string):
         if self.previous and "next" in self.previous:
@@ -147,12 +156,22 @@ class DMTools(cmd.Cmd):
             self.do_status("")
         
     def do_status(self, string):
+        self.load_players()
+        players_table = printing.table(
+            ["Player", "AC", "Spell save", "Perception"])
+        for entity in self.active_entities:
+            if entity.startswith("players/"):
+                player = self.active_entities[entity]
+                players_table.add_row(
+                    [player["name"], player["ac"], player["spell_save"],
+                    player["perception"]])
         status_table = printing.table(
             ["key", "Name", "HP", "AC", "Attack", "Damage", "Initiative"])
         for npc in self.active_entities["encounter"]:
             status_table.add_row(
                 [npc["key"], npc["name"], npc["hp"], npc["ac"], npc["attack"],
                     npc["damage"], npc["initiative"]])
+        print players_table
         print status_table
 
     def do_treasure(self, string):
