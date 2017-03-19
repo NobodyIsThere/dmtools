@@ -124,6 +124,9 @@ class DMTools(cmd.Cmd):
     def do_roll(self, string):
         _,_,_,_, result = roll.parse(string, value_only=False)
         print result
+        
+    def do_r(self, string):
+        self.do_roll(string)
 
     def do_save(self, string):
         if len(string) > 0:

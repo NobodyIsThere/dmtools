@@ -299,8 +299,8 @@ def generate_map(data_path, grid_x=200, grid_y=100):
     map = np.zeros((grid_y, grid_x))
     for i in range(grid_y):
         for j in range(grid_x):
-            x = (float(i)/grid_y)*biomes.shape[0]
-            y = (float(j)/grid_x)*biomes.shape[1]
+            x = int((float(i)/grid_y)*biomes.shape[0])
+            y = int((float(j)/grid_x)*biomes.shape[1])
             if biomes[x,y] != OCEAN:
                 if elevation[x,y] > 0.3:
                     map[i,j] = 2
